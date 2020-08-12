@@ -1,0 +1,144 @@
+Index.html
+K
+Type
+HTML
+Size
+3 KB (3,481 bytes)
+Storage used
+6 KB (6,011 bytes)
+Location
+Course_RS
+Owner
+me
+Modified
+9:56 PM by me
+Opened
+10:09 PM by me
+Created
+6:37 PM with Google Drive Web
+Add a description
+Viewers can download
+<!DOCTYPE html>
+<html>
+<head>
+<title>GLOBIS Course Relationships</title>
+
+<meta property="og:title" content="GLOBIS Course Relationships">
+<meta property="og:image" content="course_rs.png">
+
+<style type="text/css">
+  #container {
+    max-width: 100%;
+    min-height: 600px;
+    max-height: 100%;
+    margin: auto;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>GLOBIS Course Relationships</h1>
+
+<p>See which course(s) should be taken before taking a particular course. E.g. Courses which have arrows pointing to CRT have CRT as its recommended preliminary course. WARNING: The data might not be up to date or 100% accurate.</p>
+
+<div id="container"></div>
+<script src="sigma.js"></script>
+<script src="plugins/sigma.parsers.gexf.min.js"></script>
+<script>
+  // Add a method to the graph model that returns an
+  // object with every neighbors of a node inside:
+  sigma.classes.graph.addMethod('neighbors', function(nodeId) {
+    var k,
+        neighbors = {},
+        index = this.allNeighborsIndex[nodeId] || {};
+
+    for (k in index)
+      neighbors[k] = this.nodesIndex[k];
+
+    return neighbors;
+  });
+
+  sigma.parsers.gexf(
+    'course-rs.gexf',
+    {
+      renderer: {
+        container: 'container',
+        type: 'canvas'
+      },
+      settings: {
+        defaultEdgeType: 'arrow',
+        minEdgeSize: 2.5,
+        minArrowSize: 8,
+        labelSize: 'proportional',
+        labelSizeRatio: 3,
+        labelThreshold: 4
+      }
+    },
+    function(s) {
+      // We first need to save the original colors of our
+      // nodes and edges, like this:
+      s.graph.nodes().forEach(function(n) {
+        n.originalColor = n.color;
+        n.originalLabel = n.label;
+      });
+      s.graph.edges().forEach(function(e) {
+        e.originalColor = e.color;
+      });
+
+      // When a node is clicked, we check for each node
+      // if it is a neighbor of the clicked one. If not,
+      // we set its color as grey, and else, it takes its
+      // original color.
+      // We do the same for the edges, and we only keep
+      // edges that have both extremities colored.
+      s.bind('clickNode', function(e) {
+        var nodeId = e.data.node.id,
+            toKeep = s.graph.neighbors(nodeId);
+        toKeep[nodeId] = e.data.node;
+
+        s.graph.nodes().forEach(function(n) {
+          if (toKeep[n.id]) {
+            n.color = n.originalColor;
+            n.label = n.originalLabel;
+          } else {
+            n.color = '#eee';
+            n.label = "";
+          }
+        });
+
+        s.graph.edges().forEach(function(e) {
+          if (toKeep[e.source] && toKeep[e.target])
+            e.color = e.originalColor;
+          else
+            e.color = '#eee';
+        });
+
+        // Since the data has been modified, we need to
+        // call the refresh method to make the colors
+        // update effective.
+        s.refresh();
+      });
+
+      // When the stage is clicked, we just color each
+      // node and edge with its original color.
+      s.bind('clickStage', function(e) {
+        s.graph.nodes().forEach(function(n) {
+          n.color = n.originalColor;
+          n.label = n.originalLabel;
+        });
+
+        s.graph.edges().forEach(function(e) {
+          e.color = e.originalColor;
+        });
+
+        // Same as in the previous event:
+        s.refresh();
+      });
+    }
+  );
+</script>
+
+<p>Created by Kelvin Song</p>
+</body>
+</html>
